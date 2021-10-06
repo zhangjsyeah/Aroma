@@ -1,0 +1,110 @@
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+BiocManager::install("aroma.affymetrix")
+BiocManager::install("aroma.core")
+BiocManager::install("GLAD")
+install.packages("gsl")
+
+library(aroma.core)
+library(aroma.affymetrix)
+library(GLAD)
+
+verbose <- Arguments$getVerbose(-8, timestamp=TRUE)
+
+name <- "ESCC_RawData"
+chipTypes <- c("Mapping250K_Nsp", "Mapping250K_Sty")
+
+
+getwd()
+setwd("/home/ug0439/zjs/ovarian/CNVsignatures/Aroma_CallCNV/")
+
+cdfs <- lapply(chipTypes, FUN=function(chipType) {
+  AffymetrixCdfFile$byChipType(chipType)
+})
+print(cdfs)
+
+
+gis <- lapply(cdfs, FUN=getGenomeInformation)
+print(gis)
+
+sis <- lapply(cdfs, FUN=getSnpInformation)
+print(sis)
+
+
+
+cesNList <- list()
+
+##===================对于第一种芯片类型重复以下所有步骤========
+
+
+cs <- AffymetrixCelSet$byName(name, chipType=chipType)
+cs <- cs[!isDuplicated(cs)]
+print(cs)
+
+
+qn <- QuantileNormalization(cs)
+print(qn)
+
+csN <- process(qn, verbose=verbose)
+
+
+
+plm <- RmaCnPlm(csN, combineAlleles=TRUE, mergeStrands=TRUE)
+print(plm)
+
+fit(plm, verbose=verbose) 
+
+
+ces <- getChipEffectSet(plm)
+fln <- FragmentLengthNormalization(ces)
+print(fln)
+
+
+cesNList[[chipType]] <- process(fln, verbose=verbose)
+
+
+##===================对于第二种芯片类型重复以上所有步骤======
+
+
+cs <- AffymetrixCelSet$byName(name, chipType=chipType)
+cs <- cs[!isDuplicated(cs)]
+print(cs)
+
+
+qn <- QuantileNormalization(cs)
+print(qn)
+
+csN <- process(qn, verbose=verbose)
+
+
+plm <- RmaCnPlm(csN, combineAlleles=TRUE, mergeStrands=TRUE)
+print(plm)
+
+fit(plm, verbose=verbose) 
+
+，
+ces <- getChipEffectSet(plm)
+fln <- FragmentLengthNormalization(ces)
+print(fln)
+
+
+cesNList[[chipType]] <- process(fln, verbose=verbose)
+
+###==================当done以后，打印下面的信息======
+print(cesNList)
+
+##==================拷贝数区域(CNRs)的识别======
+
+
+glad <- GladModel(cesNList)  
+
+
+Error Exception:Failed to locate a genome annotation data file for genome "human"
+
+
+
+print(glad) 
+
+
+
+1
